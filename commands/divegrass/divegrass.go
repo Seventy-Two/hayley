@@ -6,22 +6,25 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/ryanuber/columnize"
+	"github.com/seventy-two/Hayley/service"
 )
 
-const (
-	URL = "http://api.football-data.org/v1/competitions/467/fixtures?timeFrame=%s"
-)
+var serviceConfig *service.Service
 
-func Divegrass() ([]string, error) {
+func divegrass() ([]string, error) {
 	data := &Fixtures{}
 	client := &http.Client{}
 	frames := []string{"p1", "n2"}
 	var str []string
 	for _, frame := range frames { // Loop through the leagues we want
-		url := fmt.Sprintf(URL, url.QueryEscape(frame))
+		url := fmt.Sprintf(serviceConfig.TargetURL, url.QueryEscape(frame))
 		req, err := http.NewRequest("GET", url, nil)
-		req.Header.Add("X-Auth-Token", "")
+		req.Header.Add("X-Auth-Token", "2bb6957d70554e388044373fb073671d")
 		req.Header.Add("X-Response-Control", `minified`)
 		resp, err := client.Do(req)
 		body, err := ioutil.ReadAll(resp.Body)
@@ -70,4 +73,33 @@ func Divegrass() ([]string, error) {
 	}
 
 	return str, nil
+}
+
+func RegisterService(dg *discordgo.Session, config *service.Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	var str string
+
+	matches := strings.Split(m.Content, " ")
+
+	switch matches[0] {
+	case "!foot":
+		res, err := divegrass()
+		if err == nil {
+			str = columnize.SimpleFormat(res)
+		} else {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+	}
 }

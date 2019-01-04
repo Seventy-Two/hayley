@@ -1,18 +1,18 @@
-package tvmaze
+package tv
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/Seventy-Two/Cara/web"
+	"github.com/bwmarrin/discordgo"
+	"github.com/seventy-two/Cara/web"
+	"github.com/seventy-two/Hayley/service"
 )
 
-const (
-	tvMazeURL = "http://api.tvmaze.com/singlesearch/shows?q=%s"
-)
+var serviceConfig *service.Service
 
-type Showinfo struct {
+type showinfo struct {
 	Name     string `json:"name"`
 	Status   string `json:"status"`
 	Schedule struct {
@@ -35,22 +35,22 @@ type Showinfo struct {
 	} `json:"_links"`
 }
 
-type Nextepisode struct {
+type nextepisode struct {
 	Season  int    `json:"season"`
 	Number  int    `json:"number"`
 	Airdate string `json:"airdate"`
 	Airtime string `json:"airtime"`
 }
 
-func Tvmaze(matches []string) (msg string, err error) {
-	results := &Showinfo{}
-	err = web.GetJSON(fmt.Sprintf(tvMazeURL, url.QueryEscape(strings.Join(matches, " "))), results)
+func tvmaze(matches []string) (msg string, err error) {
+	results := &showinfo{}
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.TargetURL, url.QueryEscape(strings.Join(matches, " "))), results)
 	if err != nil {
 		return "TVmaze\nCould not find show", nil
 	}
 
 	if len(results.Links.Nextepisode.Href) != 0 {
-		next := &Nextepisode{}
+		next := &nextepisode{}
 		err = web.GetJSON(results.Links.Nextepisode.Href, next)
 		if err != nil {
 			return "TVmaze\nCould not find show", nil
@@ -90,4 +90,29 @@ func Tvmaze(matches []string) (msg string, err error) {
 		results.Status,
 	)
 	return output, nil
+}
+
+func RegisterService(dg *discordgo.Session, config *service.Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	matches := strings.Split(m.Content, " ")
+
+	switch matches[0] {
+	case "!tv":
+		str, err := tvmaze(matches[1:])
+		if err != nil {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+	}
 }

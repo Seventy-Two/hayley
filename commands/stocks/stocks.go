@@ -4,20 +4,24 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Seventy-Two/Cara/web"
+	"github.com/bwmarrin/discordgo"
+	"github.com/seventy-two/Cara/web"
 )
 
-const (
-	URL       = "https://api.iextrading.com/1.0/stock/%s/quote"
-	LookupURL = "http://autoc.finance.yahoo.com/autoc?query=%s&region=EU&lang=en-GB"
-)
+type Service struct {
+	QuoteURL  string
+	LookupURL string
+	APIKey    string
+}
 
-func GetStock(matches []string) (msg string, err error) {
+var serviceConfig *Service
+
+func getStock(matches []string) (msg string, err error) {
 	if len(matches) == 0 {
 		return "No search terms", nil
 	}
 	lookup := &Lookup{}
-	err = web.GetJSON(fmt.Sprintf(LookupURL, strings.Join(matches, "+")), lookup)
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.LookupURL, strings.Join(matches, "+")), lookup)
 	if err != nil {
 		return fmt.Sprintf("There was a problem with your request. %s", err), nil
 	}
@@ -39,7 +43,7 @@ func GetStock(matches []string) (msg string, err error) {
 		symbol = strings.Split(lookup.ResultSet.Result[0].Symbol, ".")[0]
 	}
 
-	err = web.GetJSON(fmt.Sprintf(URL, symbol), data)
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.QuoteURL, symbol), data)
 	if err != nil {
 		return fmt.Sprintf("No data for stock symbol %s", symbol), nil
 	}
@@ -65,4 +69,29 @@ func GetStock(matches []string) (msg string, err error) {
 		perChange,
 		"%",
 	), nil
+}
+
+func RegisterService(dg *discordgo.Session, config *Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	matches := strings.Split(m.Content, " ")
+
+	switch matches[0] {
+	case "!quote":
+		str, err := getStock(matches[1:])
+		if err != nil {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+	}
 }

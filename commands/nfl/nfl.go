@@ -2,24 +2,25 @@ package nfl
 
 import (
 	"fmt"
-	"gopkg.in/xmlpath.v2"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
+	"github.com/ryanuber/columnize"
+	"github.com/seventy-two/Hayley/service"
+	"gopkg.in/xmlpath.v2"
 )
 
-const (
-	URL = "http://www.nfl.com/liveupdate/scorestrip/ss.xml"
-)
+var serviceConfig *service.Service
 
-func Nfl() (msg []string, err error) {
-	doc, _ := http.Get(fmt.Sprintf(URL))
+func nfl() (msg []string, err error) {
+	doc, err := http.Get(fmt.Sprintf(serviceConfig.TargetURL))
+	if err != nil {
+		return nil, err
+	}
 	defer doc.Body.Close()
 	root, err := xmlpath.Parse(doc.Body)
-	var debug bool
-
-	debug = true
-
 	if err != nil {
 		msg = append(msg, fmt.Sprintf("Could not retrieve matches."))
 		return msg, nil
@@ -39,7 +40,7 @@ func Nfl() (msg []string, err error) {
 		awayScoreStr = ""
 		homeScoreStr = ""
 
-		if strings.EqualFold(todaysdate, dateIter.Node().String()) || debug {
+		if strings.EqualFold(todaysdate, dateIter.Node().String()) {
 			home := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@hnn", i))
 			homeScore := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@hs", i))
 			away := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@vnn", i))
@@ -69,6 +70,35 @@ func Nfl() (msg []string, err error) {
 	}
 
 	return msg, nil
+}
+
+func RegisterService(dg *discordgo.Session, config *service.Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	matches := strings.Split(m.Content, " ")
+	var str string
+
+	switch matches[0] {
+	case "!nfl":
+		res, err := nfl()
+
+		if err != nil {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		} else {
+			str = columnize.SimpleFormat(res)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+	}
 }
 
 func getToday() (date string) {

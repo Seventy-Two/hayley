@@ -9,20 +9,26 @@ import (
 
 	"golang.org/x/text/width"
 
+	"github.com/bwmarrin/discordgo"
 	"github.com/ryanuber/columnize"
 
-	"github.com/Seventy-Two/Cara/web"
+	"github.com/seventy-two/Cara/web"
 )
 
-const (
-	dotaLeagueURL  = "http://api.steampowered.com/IDOTA2Match_570/GetLiveLeagueGames/v1/?key=%s"
-	dotaListingURL = "http://api.steampowered.com/IDOTA2Match_570/GetLeagueListing/v1/?key=%s"
-	dotaMatchURL   = "http://api.steampowered.com/IDOTA2Match_570/GetMatchDetails/v1/?key=%s"
-	dotaHeroesURL  = "http://api.steampowered.com/IEconDOTA2_570/GetHeroes/v1/?language=en_gb&key=%s"
-	Timer          = "15:04:05"
-)
+// Service is configuration for the Dota service
+type Service struct {
+	DotaLeagueURL  string
+	DotaListingURL string
+	DotaMatchURL   string
+	DotaHeroesURL  string
+	APIKey         string
+}
 
-func Dotamatches(matches []string) (msg []string, err error) {
+var serviceConfig *Service
+
+const timer = "15:04:05"
+
+func dotamatches(matches []string) (msg []string, err error) {
 	data := &LeagueGames{}
 	listing := &LeagueListing{}
 	getHeroes := &GetHeroes{}
@@ -31,7 +37,7 @@ func Dotamatches(matches []string) (msg []string, err error) {
 	var worth int
 	heroes := false
 	showScore := true
-	showTowers := true
+	showTowers := false
 	if strings.Contains(strings.Join(matches, ""), "h") {
 		heroes = true
 	}
@@ -41,18 +47,18 @@ func Dotamatches(matches []string) (msg []string, err error) {
 	//if strings.Contains(matches[0], "t") {
 	//	showTowers = true
 	//}
-	err = web.GetJSON(fmt.Sprintf(dotaListingURL, ""), listing)
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.DotaListingURL, serviceConfig.APIKey), listing)
 	if err != nil {
 		msg = append(msg, fmt.Sprintf("Could not retrieve league listings."))
 		return msg, nil
 	}
-	err = web.GetJSON(fmt.Sprintf(dotaLeagueURL, ""), data)
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.DotaLeagueURL, serviceConfig.APIKey), data)
 	if err != nil {
 		log.Print(err)
 		msg = append(msg, fmt.Sprintf("Could not retrieve matches."))
 		return msg, nil
 	}
-	web.GetJSON(fmt.Sprintf(dotaHeroesURL, ""), getHeroes)
+	web.GetJSON(fmt.Sprintf(serviceConfig.DotaHeroesURL, serviceConfig.APIKey), getHeroes)
 	if err != nil {
 		msg = append(msg, fmt.Sprintf("Could not retrieve heroes."))
 		return msg, nil
@@ -62,7 +68,7 @@ func Dotamatches(matches []string) (msg []string, err error) {
 		worth = 0
 		radiantNet = 0
 		direNet = 0
-		if (data.Result.Games[i].LeagueTier == 2 && data.Result.Games[i].Spectators >= 1000) || (data.Result.Games[i].LeagueTier == 3 && data.Result.Games[i].Spectators >= 200) {
+		if (data.Result.Games[i].Spectators >= 1000) || (data.Result.Games[i].LeagueTier == 3 && data.Result.Games[i].Spectators >= 200) {
 			var leaguename string
 			herostr := []string{""}
 			radTower := ""
@@ -89,7 +95,7 @@ func Dotamatches(matches []string) (msg []string, err error) {
 			}
 
 			duration := int(data.Result.Games[i].Scoreboard.Duration)
-			t := fmt.Sprintf((time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC).Add(time.Duration(duration) * time.Second)).Format(Timer))
+			t := fmt.Sprintf((time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC).Add(time.Duration(duration) * time.Second)).Format(timer))
 
 			for j := 0; j < len(data.Result.Games[i].Scoreboard.Radiant.Players); j++ {
 				radiantNet += data.Result.Games[i].Scoreboard.Radiant.Players[j].NetWorth
@@ -154,7 +160,7 @@ func Dotamatches(matches []string) (msg []string, err error) {
 				radiant = width.Widen.String(radiant)
 			}
 
-			str = append(str, fmt.Sprintf("Dota 2 - %s - Game %d - League: %s - %d viewers", t, game, leaguename, viewers))
+			str = append(str, fmt.Sprintf("**Dota 2 - %s - Game %d - League: %s - %d viewers**", t, game, leaguename, viewers))
 
 			if showScore && worth != 0 {
 				if heroes {
@@ -282,4 +288,50 @@ func bloatName(inStr string, max int) string {
 		inStr = strings.Repeat(" ", max-len([]rune(inStr))) + inStr
 	}
 	return inStr
+}
+
+func RegisterService(dg *discordgo.Session, config *Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	matches := strings.Split(m.Content, " ")
+
+	switch matches[0] {
+	case "!d2":
+		dotaStr := ""
+		res, err := dotamatches(matches[1:])
+		if err != nil {
+			s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("an error occured (%s)", err))
+			return
+		}
+
+		if len(res) < 4 {
+			dotaStr = dotaStr + columnize.SimpleFormat(res)
+		} else {
+			var game []string
+			for _, line := range res {
+				if strings.Contains(line, "Dota 2") {
+					dotaStr += columnize.Format(game, &columnize.Config{
+						NoTrim: true,
+					})
+					dotaStr += line + "\n"
+					game = []string{}
+				} else {
+					game = append(game, line)
+				}
+			}
+			dotaStr += columnize.Format(game, &columnize.Config{
+				NoTrim: true,
+			})
+		}
+
+		fmtstr := fmt.Sprintf("%s", dotaStr)
+		s.ChannelMessageSend(m.ChannelID, fmtstr)
+
+	}
 }

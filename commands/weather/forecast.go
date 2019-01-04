@@ -5,11 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Seventy-Two/Cara/web"
 	"github.com/ryanuber/columnize"
+	"github.com/seventy-two/Cara/web"
 )
 
-func Forecast(matches []string) (msg string, err error) {
+func forecast(matches []string) (msg string, err error) {
 	if len(matches) < 1 {
 		return "Fuck off", nil
 	}
@@ -20,8 +20,8 @@ func Forecast(matches []string) (msg string, err error) {
 		return fmt.Sprintf("Could not find %s", location), nil
 	}
 
-	data := &forecast{}
-	err = web.GetJSON(fmt.Sprintf(DarkSkyURL, coords), data)
+	data := &forecastResponse{}
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.DarkSkyURL, serviceConfig.DarkSkyAPIKey, coords), data)
 	if err != nil {
 		return fmt.Sprintf("Could not get weather for: %s", location), nil
 	}
@@ -39,10 +39,10 @@ func Forecast(matches []string) (msg string, err error) {
 		day := tm.In(loc).Weekday()
 		forecasts = append(forecasts, fmt.Sprintf("\n%s | %s | %v%s|/|%v%s ",
 			day,
-			Emoji(data.Daily.Data[i].Icon),
-			Round(data.Daily.Data[i].TemperatureMax),
+			emoji(data.Daily.Data[i].Icon),
+			round(data.Daily.Data[i].TemperatureMax),
 			units,
-			Round(data.Daily.Data[i].TemperatureMin),
+			round(data.Daily.Data[i].TemperatureMin),
 			units,
 		))
 	}

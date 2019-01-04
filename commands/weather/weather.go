@@ -6,15 +6,20 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Seventy-Two/Cara/web"
+	"github.com/bwmarrin/discordgo"
+	"github.com/seventy-two/Cara/web"
 )
 
-const (
-	GeocodeURL = "https://maps.googleapis.com/maps/api/geocode/json?address=%s&region=UK&key=%s"
-	DarkSkyURL = "https://api.forecast.io/forecast//%s?units=auto&exclude=minutely,hourly,alerts"
-)
+var serviceConfig *Service
 
-func Emoji(icon string) string {
+type Service struct {
+	GeoCodeAPIKey string
+	GeoCodeURL    string
+	DarkSkyAPIKey string
+	DarkSkyURL    string
+}
+
+func emoji(icon string) string {
 	if icon == "clear-day" {
 		return "☀️"
 	} else if icon == "clear-night" {
@@ -40,21 +45,21 @@ func Emoji(icon string) string {
 	}
 }
 
-func Round(f float64) float64 {
+func round(f float64) float64 {
 	return math.Floor(f + .5)
 }
 
 func getCoords(location string) string {
 	var err error
-	geo := &Geocode{}
-	err = web.GetJSON(fmt.Sprintf(GeocodeURL, url.QueryEscape(location), ""), geo)
+	geo := &geocodeResponse{}
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.GeoCodeURL, url.QueryEscape(location), serviceConfig.GeoCodeAPIKey), geo)
 	if err != nil || geo.Status != "OK" {
 		return ""
 	}
 	return fmt.Sprintf("%v,%v", geo.Results[0].Geometry.Location.Lat, geo.Results[0].Geometry.Location.Lng)
 }
 
-func Weather(matches []string) (msg string, err error) {
+func weather(matches []string) (msg string, err error) {
 	if len(matches) < 1 {
 		return "Fuck off", nil
 	}
@@ -65,8 +70,8 @@ func Weather(matches []string) (msg string, err error) {
 		return fmt.Sprintf("Could not find %s", location), nil
 	}
 
-	data := &forecast{}
-	err = web.GetJSON(fmt.Sprintf(DarkSkyURL, coords), data)
+	data := &forecastResponse{}
+	err = web.GetJSON(fmt.Sprintf(serviceConfig.DarkSkyURL, serviceConfig.DarkSkyAPIKey, coords), data)
 	if err != nil {
 		return fmt.Sprintf("Could not get weather for: %s", location), nil
 	}
@@ -86,16 +91,52 @@ func Weather(matches []string) (msg string, err error) {
 		location,
 		coords,
 		data.Currently.Summary,
-		Emoji(data.Currently.Icon),
-		Round(data.Currently.Temperature),
+		emoji(data.Currently.Icon),
+		round(data.Currently.Temperature),
 		units,
-		Emoji(data.Daily.Data[0].Icon),
-		Round(data.Daily.Data[0].TemperatureMax),
+		emoji(data.Daily.Data[0].Icon),
+		round(data.Daily.Data[0].TemperatureMax),
 		units,
-		Round(data.Daily.Data[0].TemperatureMin),
+		round(data.Daily.Data[0].TemperatureMin),
 		units,
 		int(data.Daily.Data[0].Humidity*100),
 		data.Daily.Data[0].WindSpeed,
 		windspeed,
 		int(data.Daily.Data[0].PrecipProbability*100)), nil
+}
+
+func RegisterService(dg *discordgo.Session, config *Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	matches := strings.Split(m.Content, " ")
+
+	switch matches[0] {
+	case "!w":
+		str, err := weather(matches[1:])
+		if err != nil {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+
+	case "!f":
+		str, err := forecast(matches[1:])
+		if err != nil {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+	}
 }

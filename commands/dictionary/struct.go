@@ -15,7 +15,7 @@ type Wordnik struct {
 	// Score float64 `json:"score"` // dont care
 }
 
-type wotd struct {
+type wotdResponse struct {
 	ID              int    `json:"id"`
 	Word            string `json:"word"`
 	PublishDate     string `json:"publishDate"`

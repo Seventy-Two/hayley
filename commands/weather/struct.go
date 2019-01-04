@@ -1,6 +1,6 @@
 package weather
 
-type Geocode struct {
+type geocodeResponse struct {
 	Results []struct {
 		AddressComponents []struct {
 			LongName  string   `json:"long_name"`
@@ -41,7 +41,7 @@ type Geocode struct {
 	Status string `json:"status"`
 }
 
-type Flags struct {
+type flags struct {
 	DarkSkyUnavailable string   `json:"darksky-unavailable"`
 	DarkSkyStations    []string `json:"darksky-stations"`
 	DataPointStations  []string `json:"datapoint-stations"`
@@ -53,7 +53,7 @@ type Flags struct {
 	Units              string   `json:"units"`
 }
 
-type DataPoint struct {
+type dataPoint struct {
 	Time                   int64   `json:"time"`
 	Summary                string  `json:"summary"`
 	Icon                   string  `json:"icon"`
@@ -82,10 +82,10 @@ type DataPoint struct {
 	MoonPhase              float64 `json:"moonPhase"`
 }
 
-type DataBlock struct {
+type dataBlock struct {
 	Summary string      `json:"summary"`
 	Icon    string      `json:"icon"`
-	Data    []DataPoint `json:"data"`
+	Data    []dataPoint `json:"data"`
 }
 
 type alert struct {
@@ -96,27 +96,27 @@ type alert struct {
 	URI         string  `json:"uri"`
 }
 
-type forecast struct {
+type forecastResponse struct {
 	Latitude  float64   `json:"latitude"`
 	Longitude float64   `json:"longitude"`
 	Timezone  string    `json:"timezone"`
 	Offset    float64   `json:"offset"`
-	Currently DataPoint `json:"currently"`
-	Minutely  DataBlock `json:"minutely"`
-	Hourly    DataBlock `json:"hourly"`
-	Daily     DataBlock `json:"daily"`
+	Currently dataPoint `json:"currently"`
+	Minutely  dataBlock `json:"minutely"`
+	Hourly    dataBlock `json:"hourly"`
+	Daily     dataBlock `json:"daily"`
 	Alerts    []alert   `json:"alerts"`
-	Flags     Flags     `json:"flags"`
+	Flags     flags     `json:"flags"`
 	APICalls  int       `json:"apicalls"`
 	Code      int       `json:"code"`
 }
 
-type Units string
+type units string
 
 const (
-	CA   Units = "ca"
-	SI   Units = "si"
-	US   Units = "us"
-	UK   Units = "uk"
-	AUTO Units = "auto"
+	CA   units = "ca"
+	SI   units = "si"
+	US   units = "us"
+	UK   units = "uk"
+	AUTO units = "auto"
 )

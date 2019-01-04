@@ -1,4 +1,4 @@
-package omdb
+package movie
 
 type movie struct {
 	Title             string `json:"Title"`

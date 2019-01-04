@@ -1,4 +1,4 @@
-package wolfram
+package math
 
 import (
 	"fmt"
@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bwmarrin/discordgo"
+	"github.com/seventy-two/Hayley/service"
 	"gopkg.in/xmlpath.v2"
 )
 
-const (
-	wolframURL = "http://api.wolframalpha.com/v2/query?appid=WJKLJW-UJPL8RUJLH&input=%s"
-)
+var serviceConfig *service.Service
 
 func extractURL(text string) string {
 	extractedURL := ""
@@ -30,8 +30,11 @@ func extractURL(text string) string {
 	return extractedURL
 }
 
-func Wolfram(matches []string) (msg string, err error) {
-	doc, _ := http.Get(fmt.Sprintf(wolframURL, url.QueryEscape(strings.Join(matches, " "))))
+func wolfram(matches []string) (msg string, err error) {
+	doc, err := http.Get(fmt.Sprintf(serviceConfig.TargetURL, serviceConfig.APIKey, url.QueryEscape(strings.Join(matches, " "))))
+	if err != nil {
+		return "Wolfram | An error occured", nil
+	}
 	defer doc.Body.Close()
 	root, err := xmlpath.Parse(doc.Body)
 
@@ -52,8 +55,8 @@ func Wolfram(matches []string) (msg string, err error) {
 	in, _ := input.String(root)
 	out, _ := output.String(root)
 
-	in = strings.Replace(in, `\:`, `\u`, -1)
-	out = strings.Replace(out, `\:`, `\u`, -1)
+	in = strings.Replace(in, `\:`, `\n`, -1)
+	out = strings.Replace(out, `\:`, `\n`, -1)
 
 	reg := regexp.MustCompile("\\s+")
 	in = reg.ReplaceAllString(in, " ")
@@ -63,4 +66,29 @@ func Wolfram(matches []string) (msg string, err error) {
 	out, _ = strconv.Unquote(`"` + out + `"`)
 
 	return fmt.Sprintf("Wolfram\n%s >>> %s", in, out), nil
+}
+
+func RegisterService(dg *discordgo.Session, config *service.Service) {
+	serviceConfig = config
+	dg.AddHandler(invokeCommand)
+}
+
+func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+	matches := strings.Split(m.Content, " ")
+
+	switch matches[0] {
+	case "!wa":
+		str, err := wolfram(matches[1:])
+		if err != nil {
+			str = fmt.Sprintf("an error occured (%s)", err)
+		}
+
+		if str != "" {
+			fmtstr := fmt.Sprintf("```%s```", str)
+			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		}
+	}
 }
