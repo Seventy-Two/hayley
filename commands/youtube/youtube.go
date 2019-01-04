@@ -20,11 +20,6 @@ type Service struct {
 
 var serviceConfig *Service
 
-const (
-	youtubeSearchURL = "https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=%s&key=AIzaSyCVZyCBpw5iyDM7lvbkaXQEOSIlB16igtE"
-	youtubeVideoURL  = "https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=%s&key=AIzaSyCVZyCBpw5iyDM7lvbkaXQEOSIlB16igtE"
-)
-
 type youtubeSearch struct {
 	Kind          string `json:"kind"`
 	Etag          string `json:"etag"`
