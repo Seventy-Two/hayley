@@ -8,37 +8,30 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	cli "github.com/jawher/mow.cli"
+	"github.com/seventy-two/Hayley/commands/dictionary"
+	"github.com/seventy-two/Hayley/commands/divegrass"
+	"github.com/seventy-two/Hayley/commands/dota"
+	"github.com/seventy-two/Hayley/commands/math"
+	"github.com/seventy-two/Hayley/commands/movie"
+	"github.com/seventy-two/Hayley/commands/nfl"
+	"github.com/seventy-two/Hayley/commands/stocks"
+	"github.com/seventy-two/Hayley/commands/tv"
+	"github.com/seventy-two/Hayley/commands/urbandictionary"
+	"github.com/seventy-two/Hayley/commands/weather"
+	"github.com/seventy-two/Hayley/commands/youtube"
 	"github.com/utilitywarehouse/uwgolib/log"
 )
 
 func ready(s *discordgo.Session, event *discordgo.Ready) {
-	s.UpdateStatus(0, "Listening to !w, !d2, !m and !nfl")
+	s.UpdateStatus(0, "Listening to prefix !")
 }
 
-type keys struct {
-	botKey     string
-	dota       string
-	geocode    string
-	weather    string
-	divergrass string
-	dictionary string
-	omdb       string
-	wolfram    string
-}
+func start(app *cli.Cli, services *serviceConfig) {
+	dg, _ := discordgo.New(fmt.Sprintf("Bot %s", services.discordAPI.APIKey))
 
-func start(app *cli.Cli) {
-
-	botKey := app.String(cli.StringOpt{
-		Name:   "botKey",
-		Desc:   "Discord bot key combo",
-		Value:  config.botKey,
-		EnvVar: "DISCORD_BOT_KEY",
-	})
-
-	dg, _ := discordgo.New(fmt.Sprintf("Bot %s", botKey))
+	go registerServices(dg, services)
 
 	dg.AddHandler(ready)
-	dg.AddHandler(messageCreate)
 
 	err := dg.Open()
 
@@ -53,4 +46,40 @@ func start(app *cli.Cli) {
 	<-sc
 
 	dg.Close()
+}
+
+func registerServices(dg *discordgo.Session, services *serviceConfig) {
+	if services.dictionaryAPI != nil {
+		dictionary.RegisterService(dg, services.dictionaryAPI)
+	}
+	if services.dotaAPI != nil {
+		dota.RegisterService(dg, services.dotaAPI)
+	}
+	if services.divegrassAPI != nil {
+		divegrass.RegisterService(dg, services.divegrassAPI)
+	}
+	if services.nflAPI != nil {
+		nfl.RegisterService(dg, services.nflAPI)
+	}
+	if services.movieAPI != nil {
+		movie.RegisterService(dg, services.movieAPI)
+	}
+	if services.stocksAPI != nil {
+		stocks.RegisterService(dg, services.stocksAPI)
+	}
+	if services.tvAPI != nil {
+		tv.RegisterService(dg, services.tvAPI)
+	}
+	if services.urbanAPI != nil {
+		urbandictionary.RegisterService(dg, services.urbanAPI)
+	}
+	if services.weatherAPI != nil {
+		weather.RegisterService(dg, services.weatherAPI)
+	}
+	if services.mathAPI != nil {
+		math.RegisterService(dg, services.mathAPI)
+	}
+	if services.youtubeAPI != nil {
+		youtube.RegisterService(dg, services.youtubeAPI)
+	}
 }
