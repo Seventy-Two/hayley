@@ -2,74 +2,133 @@ package nfl
 
 import (
 	"fmt"
-	"net/http"
+	"strconv"
 	"strings"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ryanuber/columnize"
+	"github.com/seventy-two/Cara/web"
 	"github.com/seventy-two/Hayley/service"
-	"gopkg.in/xmlpath.v2"
 )
 
 var serviceConfig *service.Service
 
-func nfl() (msg []string, err error) {
-	doc, err := http.Get(fmt.Sprintf(serviceConfig.TargetURL))
+func nfl() ([]string, error) {
+	m := map[string]game{}
+	err := web.GetJSON(serviceConfig.TargetURL, &m)
 	if err != nil {
 		return nil, err
 	}
-	defer doc.Body.Close()
-	root, err := xmlpath.Parse(doc.Body)
-	if err != nil {
-		msg = append(msg, fmt.Sprintf("Could not retrieve matches."))
-		return msg, nil
-	}
-
-	todaysdate := getToday()
-	d := xmlpath.MustCompile("/ss/gms/g/@d")
-
-	dateIter := d.Iter(root)
-	var i int
-	var timeStr string
-	var awayScoreStr string
-	var homeScoreStr string
-	i = 1
-	for dateIter.Next() {
-		timeStr = ""
-		awayScoreStr = ""
-		homeScoreStr = ""
-
-		if strings.EqualFold(todaysdate, dateIter.Node().String()) {
-			home := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@hnn", i))
-			homeScore := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@hs", i))
-			away := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@vnn", i))
-			awayScore := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@vs", i))
-			quarter := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@q", i))
-			t := xmlpath.MustCompile(fmt.Sprintf("/ss/gms/g[%d]/@t", i))
-
-			homeStr, _ := home.String(root)
-			awayStr, _ := away.String(root)
-			quarterStr, _ := quarter.String(root)
-			if strings.EqualFold(quarterStr, "P") {
-				timeStr, _ = t.String(root)
-				timeStr = timeStr + " ET"
-			} else {
-				homeScoreStr, _ = homeScore.String(root)
-				awayScoreStr, _ = awayScore.String(root)
-			}
-
-			homeStr = getTeamColour(homeStr)
-			awayStr = getTeamColour(awayStr)
-			quarterStr = fixQuarter(quarterStr)
-
-			out := fmt.Sprintf(homeStr + " | " + homeScoreStr + " | - | " + awayScoreStr + " | " + awayStr + " | [" + quarterStr + timeStr + "]")
-			msg = append(msg, out)
+	var out []string
+	for _, g := range m {
+		if g.Qtr == nil {
+			continue
 		}
-		i++
+		out = append(out, createGameString(&g))
+	}
+	return out, nil
+
+}
+
+func createGameString(g *game) string {
+	home := getTeamName(g.Home.Abbr)
+	away := getTeamName(g.Away.Abbr)
+	homeScore := strconv.Itoa(g.Home.Score.T)
+	awayScore := strconv.Itoa(g.Away.Score.T)
+
+	if g.Posteam == g.Home.Abbr {
+		homeScore = homeScore + " 🏈"
+	} else {
+		awayScore = "🏈 " + awayScore
+	}
+	down := ""
+	switch g.Down {
+	case 1:
+		down = "1st Down"
+	case 2:
+		down = "2nd Down"
+	case 3:
+		down = "3rd Down"
+	case 4:
+		down = "4th Down"
 	}
 
-	return msg, nil
+	ballAt := ""
+	if g.Bp != 0 {
+		ballAt = "| Ball at " + strconv.Itoa(g.Bp)
+	}
+	return awayScore + " - " + away + " @ " + home + " - " + homeScore + " | " + g.Clock + " " + *g.Qtr + ballAt + down + " | " + g.Media.Tv
+}
+
+func getTeamName(team string) string {
+	switch team {
+	case "ARI":
+		return "Arizona Cardinals"
+	case "ATL":
+		return "Atlanta Falcons"
+	case "CAR":
+		return "Carolina Panthers"
+	case "CHI":
+		return "Chicago Bears"
+	case "DAL":
+		return "Dallas Cowboys"
+	case "DET":
+		return "Detroit Lions"
+	case "GB":
+		return "Green Bay Packers"
+	case "MIN":
+		return "Minnesota Vikings"
+	case "NO":
+		return "New Orleans Saints"
+	case "NYG":
+		return "New York Giants"
+	case "PHI":
+		return "Philadelphia Eagles"
+	case "LAR":
+		return "Los Angeles Rams"
+	case "SF":
+		return "San Fransisco 49ers"
+	case "SEA":
+		return "Seattle Seahawks"
+	case "TB":
+		return "Tampa Bay Buccaneers"
+	case "WAS":
+		return "Washington Redskins"
+	case "BAL":
+		return "Baltimore Ravens"
+	case "BUF":
+		return "Buffalo Bills"
+	case "CIN":
+		return "Cincinnati Bengals"
+	case "CLE":
+		return "Cleveland Browns"
+	case "DEN":
+		return "Denver Broncos"
+	case "HOU":
+		return "Houston Texans"
+	case "IND":
+		return "Indianapolis Colts"
+	case "JAC":
+		return "Jacksonville Jaguars"
+	case "KC":
+		return "Kansas City Chiefs"
+	case "MIA":
+		return "Miami Dolphins"
+	case "NE":
+		return "New England Patriots"
+	case "NYJ":
+		return "New York Jets"
+	case "OAK":
+		return "Oakland Raiders"
+	case "PIT":
+		return "Pittsburgh Steelers"
+	case "LAC":
+		return "Los Angeles Chargers"
+	case "TEN":
+		return "Tennessee Titans"
+	default:
+		return team
+	}
 }
 
 func RegisterService(dg *discordgo.Session, config *service.Service) {
@@ -98,107 +157,5 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 			fmtstr := fmt.Sprintf("```%s```", str)
 			s.ChannelMessageSend(m.ChannelID, fmtstr)
 		}
-	}
-}
-
-func getToday() (date string) {
-	now := time.Now()
-	nowUTC := now.UTC()
-	loc, _ := time.LoadLocation("America/New_York")
-	jst := nowUTC.In(loc)
-	return jst.Format("Mon")
-}
-
-func getTeamColour(team string) (colouredTeam string) {
-	switch team {
-	case "cardinals":
-		return "Arizona Cardinals"
-	case "falcons":
-		return "Atlanta Falcons"
-	case "panthers":
-		return "Carolina Panthers"
-	case "bears":
-		return "Chicago Bears"
-	case "cowboys":
-		return "Dallas Cowboys"
-	case "lions":
-		return "Detroit Lions"
-	case "packers":
-		return "Green Bay Packers"
-	case "vikings":
-		return "Minnesota Vikings"
-	case "saints":
-		return "New Orleans Saints"
-	case "giants":
-		return "New York Giants"
-	case "eagles":
-		return "Philadelphia Eagles"
-	case "rams":
-		return "Los Angeles Rams"
-	case "49ers":
-		return "San Fransisco 49ers"
-	case "seahawks":
-		return "Seattle Seahawks"
-	case "buccaneers":
-		return "Tampa Bay Buccaneers"
-	case "redskins":
-		return "Washington Redskins"
-	case "ravens":
-		return "Baltimore Ravens"
-	case "bills":
-		return "Buffalo Bills"
-	case "bengals":
-		return "Cincinnati Bengals"
-	case "browns":
-		return "Cleveland Browns"
-	case "broncos":
-		return "Denver Broncos"
-	case "texans":
-		return "Houston Texans"
-	case "colts":
-		return "Indianapolis Colts"
-	case "jaguars":
-		return "Jacksonville Jaguars"
-	case "chiefs":
-		return "Kansas City Chiefs"
-	case "dolphins":
-		return "Miami Dolphins"
-	case "patriots":
-		return "New England Patriots"
-	case "jets":
-		return "New York Jets"
-	case "raiders":
-		return "Oakland Raiders"
-	case "steelers":
-		return "Pittsburgh Steelers"
-	case "chargers":
-		return "Los Angeles Chargers"
-	case "titans":
-		return "Tennessee Titans"
-	default:
-		return team
-	}
-}
-
-func fixQuarter(quarter string) (prettyQuarter string) {
-	switch quarter {
-	case "P":
-		return ""
-	case "1":
-		return "Q1"
-	case "2":
-		return "Q2"
-	case "3":
-		return "Q3"
-	case "4":
-		return "Q4"
-	case "5":
-		return "OT"
-	case "F":
-		return "Final"
-	case "FO":
-		return "Final (OT)"
-	default:
-		return quarter
 	}
 }

@@ -164,6 +164,13 @@ func main() {
 				EnvVar: "MATH_API_KEY",
 			}),
 		},
+		tvAPI: &service.Service{
+			TargetURL: *app.String(cli.StringOpt{
+				Name:   "TvURL",
+				Value:  "http://api.tvmaze.com/singlesearch/shows?q=%s",
+				EnvVar: "TV_URL",
+			}),
+		},
 		youtubeAPI: &youtube.Service{
 			SearchURL: *app.String(cli.StringOpt{
 				Name:   "YoutubeSearchURL",
@@ -184,7 +191,7 @@ func main() {
 		nflAPI: &service.Service{
 			TargetURL: *app.String(cli.StringOpt{
 				Name:   "NFLURL",
-				Value:  "http://www.nfl.com/liveupdate/scorestrip/ss.xml",
+				Value:  "http://www.nfl.com/liveupdate/scores/scores.json",
 				EnvVar: "NFL_API_URL",
 			}),
 		},
