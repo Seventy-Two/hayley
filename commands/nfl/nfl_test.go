@@ -24,5 +24,5 @@ func TestNfl(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(out))
-	assert.Equal(t, `🏈 0 - Indianapolis Colts @ Houston Texans - 0 | 15:00 Pregame | ESPN`, out[0])
+	assert.Equal(t, `0 | - | Indianapolis Colts | @ | Houston Texans | - | 0 | 15:00 Pregame | ESPN`, out[0])
 }
