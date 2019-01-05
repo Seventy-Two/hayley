@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -19,7 +20,6 @@ import (
 	"github.com/seventy-two/Hayley/commands/urbandictionary"
 	"github.com/seventy-two/Hayley/commands/weather"
 	"github.com/seventy-two/Hayley/commands/youtube"
-	"github.com/utilitywarehouse/uwgolib/log"
 )
 
 func ready(s *discordgo.Session, event *discordgo.Ready) {
@@ -36,10 +36,8 @@ func start(app *cli.Cli, services *serviceConfig) {
 	err := dg.Open()
 
 	if err != nil {
-		log.Error("Error opening Discord session: ", err)
+		log.Fatalf("Error opening Discord session: %s", err)
 	}
-
-	log.Info("Hayley is now running.  Press CTRL-C to exit.")
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)

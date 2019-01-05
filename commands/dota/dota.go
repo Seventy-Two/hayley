@@ -49,8 +49,9 @@ func dotamatches(matches []string) (msg []string, err error) {
 	//}
 	err = web.GetJSON(fmt.Sprintf(serviceConfig.DotaListingURL, serviceConfig.APIKey), listing)
 	if err != nil {
-		msg = append(msg, fmt.Sprintf("Could not retrieve league listings."))
-		return msg, nil
+		//		msg = append(msg, fmt.Sprintf("Could not retrieve league listings.",))
+		//		return msg, nil
+		log.Print(err)
 	}
 	err = web.GetJSON(fmt.Sprintf(serviceConfig.DotaLeagueURL, serviceConfig.APIKey), data)
 	if err != nil {
