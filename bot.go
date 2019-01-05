@@ -15,6 +15,7 @@ import (
 	"github.com/seventy-two/Hayley/commands/math"
 	"github.com/seventy-two/Hayley/commands/movie"
 	"github.com/seventy-two/Hayley/commands/nfl"
+	"github.com/seventy-two/Hayley/commands/siege"
 	"github.com/seventy-two/Hayley/commands/stocks"
 	"github.com/seventy-two/Hayley/commands/tv"
 	"github.com/seventy-two/Hayley/commands/urbandictionary"
@@ -80,4 +81,8 @@ func registerServices(dg *discordgo.Session, services *serviceConfig) {
 	if services.youtubeAPI != nil {
 		youtube.RegisterService(dg, services.youtubeAPI)
 	}
+	if services.siegeAPI != nil {
+		siege.RegisterService(dg, services.siegeAPI)
+	}
+
 }

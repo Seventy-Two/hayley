@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/seventy-two/Hayley/commands/dictionary"
+	"github.com/seventy-two/Hayley/commands/siege"
 	"github.com/seventy-two/Hayley/commands/stocks"
 	"github.com/seventy-two/Hayley/commands/weather"
 	"github.com/seventy-two/Hayley/commands/youtube"
@@ -32,6 +33,7 @@ type serviceConfig struct {
 	youtubeAPI    *youtube.Service
 	nflAPI        *service.Service
 	stocksAPI     *stocks.Service
+	siegeAPI      *siege.Service
 }
 
 var appMeta = struct {
@@ -205,6 +207,38 @@ func main() {
 				Name:   "StocksLookupURL",
 				Value:  "http://autoc.finance.yahoo.com/autoc?query=%s&region=EU&lang=en-GB",
 				EnvVar: "STOCKS_LOOKUP_URL",
+			}),
+		},
+		siegeAPI: &siege.Service{
+			AuthURL: *app.String(cli.StringOpt{
+				Name:   "SiegeAuthURL",
+				Value:  "https://uplayconnect.ubi.com/ubiservices/v3/profiles/sessions",
+				EnvVar: "SIEGE_AUTH_URL",
+			}),
+			AuthUser: *app.String(cli.StringOpt{
+				Name:   "SiegeAuthUser",
+				Value:  "",
+				EnvVar: "SIEGE_AUTH_USER",
+			}),
+			AuthPassword: *app.String(cli.StringOpt{
+				Name:   "SiegeAuthPassword",
+				Value:  "",
+				EnvVar: "SIEGE_AUTH_PASSWORD",
+			}),
+			ProfileURL: *app.String(cli.StringOpt{
+				Name:   "SiegeProfileURL",
+				Value:  "https://public-ubiservices.ubi.com/v2/profiles?platformType=uplay&nameOnPlatform=%s",
+				EnvVar: "SIEGE_PROFILE_URL",
+			}),
+			LevelURL: *app.String(cli.StringOpt{
+				Name:   "SiegeLevelURL",
+				Value:  "https://public-ubiservices.ubi.com/v1/spaces/5172a557-50b5-4665-b7db-e3f2e8c5041d/sandboxes/OSBOR_PC_LNCH_A/r6playerprofile/playerprofile/progressions?profile_ids=%s",
+				EnvVar: "SIEGE_LEVEL_URL",
+			}),
+			RankURL: *app.String(cli.StringOpt{
+				Name:   "SiegeRankURL",
+				Value:  "https://public-ubiservices.ubi.com/v1/spaces/5172a557-50b5-4665-b7db-e3f2e8c5041d/sandboxes/OSBOR_PC_LNCH_A/r6karma/players?board_id=pvp_ranked&region_id=emea&season_id=-1&profile_ids=%s",
+				EnvVar: "SIEGE_RANK_URL",
 			}),
 		},
 	}
