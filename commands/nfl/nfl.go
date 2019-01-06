@@ -40,12 +40,13 @@ func createGameString(g *game) string {
 	awayScore := strconv.Itoa(g.Away.Score.T)
 	down := ""
 	empty := ""
+	clock := ""
 
-	if *g.Qtr != "Pregame" {
+	if *g.Qtr != "Pregame" && *g.Qtr != "Final" {
 		if g.Posteam == g.Home.Abbr {
-			homeScore = homeScore + " 🏈"
+			home = ">" + home
 		} else {
-			awayScore = "🏈 " + awayScore
+			away = ">" + away
 		}
 		switch g.Down {
 		case 1:
@@ -61,11 +62,21 @@ func createGameString(g *game) string {
 		if g.Yl != "" {
 			down = down + " at " + g.Yl
 		}
-	} else {
+		clock = g.Clock
+	} else if *g.Qtr == "Pregame" {
 		return ""
 	}
 
-	return awayScore + " | " + away + " | @ | " + home + "  | " + homeScore + empty + " | " + g.Clock + "Q" + *g.Qtr + " " + down
+	return awayScore + " | " + away + " | @ | " + home + "  | " + homeScore + empty + " | " + clock + getQuarter(*g.Qtr) + " " + down
+}
+
+func getQuarter(q string) string {
+	switch q {
+	case "1", "2", "3", "4":
+		return "Q" + q
+	default:
+		return q
+	}
 }
 
 func getTeamName(team string) string {

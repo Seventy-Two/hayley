@@ -55,6 +55,14 @@ func siege(user string) (string, error) {
 		log.Print(err)
 		return "", nil
 	}
+	if level == "0" || level == "" {
+		return "Did not find user", nil
+	}
+
+	if rank == 0 {
+		out := fmt.Sprintf("%s - Level %s", user, level)
+		return out, nil
+	}
 
 	cleanRank := convertRank(rank)
 	cleanSeaons := convertSeason(season)
@@ -78,44 +86,46 @@ func convertSeason(season int) string {
 func convertRank(rank int) string {
 	switch rank {
 	case 0:
-		return "Copper IV"
+		return "Unranked"
 	case 1:
-		return "Copper III"
+		return "Copper IV"
 	case 2:
-		return "Copper II"
+		return "Copper III"
 	case 3:
-		return "Copper I"
+		return "Copper II"
 	case 4:
-		return "Bronze IV"
+		return "Copper I"
 	case 5:
-		return "Bronze III"
+		return "Bronze IV"
 	case 6:
-		return "Bronze II"
+		return "Bronze III"
 	case 7:
-		return "Bronze I"
+		return "Bronze II"
 	case 8:
-		return "Silver IV"
+		return "Bronze I"
 	case 9:
-		return "Silver III"
+		return "Silver IV"
 	case 10:
-		return "Silver II"
+		return "Silver III"
 	case 11:
-		return "Silver I"
+		return "Silver II"
 	case 12:
-		return "Gold IV"
+		return "Silver I"
 	case 13:
-		return "Gold III"
+		return "Gold IV"
 	case 14:
-		return "Gold II"
+		return "Gold III"
 	case 15:
-		return "Gold I"
+		return "Gold II"
 	case 16:
-		return "Platinum III"
+		return "Gold I"
 	case 17:
-		return "Platinum II"
+		return "Platinum III"
 	case 18:
-		return "Platinum I"
+		return "Platinum II"
 	case 19:
+		return "Platinum I"
+	case 20:
 		return "Diamond"
 	default:
 		return "Coward"
