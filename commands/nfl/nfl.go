@@ -24,7 +24,10 @@ func nfl() ([]string, error) {
 		if g.Qtr == nil {
 			continue
 		}
-		out = append(out, createGameString(&g))
+		game := createGameString(&g)
+		if game != "" {
+			out = append(out, game)
+		}
 	}
 	return out, nil
 
@@ -35,8 +38,8 @@ func createGameString(g *game) string {
 	away := getTeamName(g.Away.Abbr)
 	homeScore := strconv.Itoa(g.Home.Score.T)
 	awayScore := strconv.Itoa(g.Away.Score.T)
-	ballAt := ""
 	down := ""
+	empty := ""
 
 	if *g.Qtr != "Pregame" {
 		if g.Posteam == g.Home.Abbr {
@@ -46,89 +49,91 @@ func createGameString(g *game) string {
 		}
 		switch g.Down {
 		case 1:
-			down = "1st Down & " + strconv.Itoa(g.Togo)
+			down = "1st & " + strconv.Itoa(g.Togo)
 		case 2:
-			down = "2nd Down & " + strconv.Itoa(g.Togo)
+			down = "2nd & " + strconv.Itoa(g.Togo)
 		case 3:
-			down = "3rd Down & " + strconv.Itoa(g.Togo)
+			down = "3rd & " + strconv.Itoa(g.Togo)
 		case 4:
-			down = "4th Down & " + strconv.Itoa(g.Togo)
+			down = "4th & " + strconv.Itoa(g.Togo)
 		}
 
-		if g.Bp != 0 {
-			ballAt = "| Ball at " + strconv.Itoa(g.Bp)
+		if g.Yl != "" {
+			down = down + " at " + g.Yl
 		}
+	} else {
+		return ""
 	}
 
-	return awayScore + " | - | " + away + " | @ | " + home + " | - | " + homeScore + " | " + g.Clock + " " + *g.Qtr + ballAt + down + " | " + g.Media.Tv
+	return awayScore + " | " + away + " | @ | " + home + "  | " + homeScore + empty + " | " + g.Clock + "Q" + *g.Qtr + " " + down
 }
 
 func getTeamName(team string) string {
 	switch team {
 	case "ARI":
-		return "Arizona Cardinals"
+		return "Cardinals"
 	case "ATL":
-		return "Atlanta Falcons"
+		return "Falcons"
 	case "CAR":
-		return "Carolina Panthers"
+		return "Panthers"
 	case "CHI":
-		return "Chicago Bears"
+		return "Bears"
 	case "DAL":
-		return "Dallas Cowboys"
+		return "Cowboys"
 	case "DET":
-		return "Detroit Lions"
+		return "Lions"
 	case "GB":
-		return "Green Bay Packers"
+		return "Packers"
 	case "MIN":
-		return "Minnesota Vikings"
+		return "Vikings"
 	case "NO":
-		return "New Orleans Saints"
+		return "Saints"
 	case "NYG":
-		return "New York Giants"
+		return "Giants"
 	case "PHI":
-		return "Philadelphia Eagles"
+		return "Eagles"
 	case "LAR":
-		return "Los Angeles Rams"
+		return "Rams"
 	case "SF":
-		return "San Fransisco 49ers"
+		return "49ers"
 	case "SEA":
-		return "Seattle Seahawks"
+		return "Seahawks"
 	case "TB":
-		return "Tampa Bay Buccaneers"
+		return "Buccaneers"
 	case "WAS":
-		return "Washington Redskins"
+		return "Redskins"
 	case "BAL":
-		return "Baltimore Ravens"
+		return "Ravens"
 	case "BUF":
-		return "Buffalo Bills"
+		return "Bills"
 	case "CIN":
-		return "Cincinnati Bengals"
+		return "Bengals"
 	case "CLE":
-		return "Cleveland Browns"
+		return "Browns"
 	case "DEN":
-		return "Denver Broncos"
+		return "Broncos"
 	case "HOU":
-		return "Houston Texans"
+		return "Texans"
 	case "IND":
-		return "Indianapolis Colts"
+		return "Colts"
 	case "JAC":
-		return "Jacksonville Jaguars"
+		return "Jaguars"
 	case "KC":
-		return "Kansas City Chiefs"
+		return "Chiefs"
 	case "MIA":
-		return "Miami Dolphins"
+		return "Dolphins"
 	case "NE":
-		return "New England Patriots"
+		return "Patriots"
 	case "NYJ":
-		return "New York Jets"
+		return "Jets"
 	case "OAK":
-		return "Oakland Raiders"
+		return "Raiders"
 	case "PIT":
-		return "Pittsburgh Steelers"
+		return "Steelers"
 	case "LAC":
-		return "Los Angeles Chargers"
+		return "Chargers"
 	case "TEN":
-		return "Tennessee Titans"
+		return "Titans"
 	default:
 		return team
 	}

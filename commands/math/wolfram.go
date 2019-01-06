@@ -2,6 +2,7 @@ package math
 
 import (
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -39,7 +40,7 @@ func wolfram(matches []string) (msg string, err error) {
 	root, err := xmlpath.Parse(doc.Body)
 
 	if err != nil {
-		return "Wolfram | Stephen Wolfram doesn't know the answer to this", nil
+		return getRandomNumberString(), nil
 	}
 
 	success := xmlpath.MustCompile("//queryresult/@success")
@@ -49,7 +50,7 @@ func wolfram(matches []string) (msg string, err error) {
 	suc, _ := success.String(root)
 
 	if suc != "true" {
-		return fmt.Sprintf("Wolfram | Stephen Wolfram doesn't know the answer to this"), nil
+		return getRandomNumberString(), nil
 	}
 
 	in, _ := input.String(root)
@@ -66,6 +67,10 @@ func wolfram(matches []string) (msg string, err error) {
 	out, _ = strconv.Unquote(`"` + out + `"`)
 
 	return fmt.Sprintf("Wolfram\n%s >>> %s", in, out), nil
+}
+
+func getRandomNumberString() string {
+	return fmt.Sprintf("%d", rand.Int63())
 }
 
 func RegisterService(dg *discordgo.Session, config *service.Service) {
