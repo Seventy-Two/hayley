@@ -38,7 +38,7 @@ func urban(matches []string) (msg string, err error) {
 	if err != nil {
 		return fmt.Sprintf("%s | (No definition found)", query), nil
 	}
-	if results.ResultType == "no_results" {
+	if results.ResultType == "no_results" || len(results.List) == 0 {
 		return fmt.Sprintf("%s | (No definition found)", query), nil
 	}
 
