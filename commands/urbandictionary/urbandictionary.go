@@ -13,10 +13,6 @@ import (
 
 var serviceConfig *service.Service
 
-const (
-	urbanURL = "http://api.urbandictionary.com/v0/define?term=%s"
-)
-
 type definitionResults struct {
 	Tags       []string `json:"tags"`
 	ResultType string   `json:"result_type"`

@@ -241,6 +241,13 @@ func main() {
 				EnvVar: "SIEGE_RANK_URL",
 			}),
 		},
+		urbanAPI: &service.Service{
+			TargetURL: *app.String(cli.StringOpt{
+				Name:   "UrbanAPIURL",
+				Value:  "http://api.urbandictionary.com/v0/define?term=%s",
+				EnvVar: "URBAN_DICT_URL",
+			}),
+		},
 	}
 
 	app.Action = func() {
