@@ -6,6 +6,7 @@ import (
 	"github.com/seventy-two/Hayley/commands/dictionary"
 	"github.com/seventy-two/Hayley/commands/siege"
 	"github.com/seventy-two/Hayley/commands/stocks"
+	"github.com/seventy-two/Hayley/commands/teamspeak"
 	"github.com/seventy-two/Hayley/commands/weather"
 	"github.com/seventy-two/Hayley/commands/youtube"
 	"github.com/seventy-two/Hayley/service"
@@ -34,6 +35,7 @@ type serviceConfig struct {
 	nflAPI        *service.Service
 	stocksAPI     *stocks.Service
 	siegeAPI      *siege.Service
+	teamspeakAPI  *teamspeak.Service
 }
 
 var appMeta = struct {
@@ -246,6 +248,33 @@ func main() {
 				Name:   "UrbanAPIURL",
 				Value:  "http://api.urbandictionary.com/v0/define?term=%s",
 				EnvVar: "URBAN_DICT_URL",
+			}),
+		},
+		teamspeakAPI: &teamspeak.Service{
+			Address: *app.String(cli.StringOpt{
+				Name:   "TeamspeakAddress",
+				Value:  "",
+				EnvVar: "TEAMSPEAK_ADDRESS",
+			}),
+			Port: *app.String(cli.StringOpt{
+				Name:   "TeamspeakPort",
+				Value:  "10011",
+				EnvVar: "TEAMSPEAK_PORT",
+			}),
+			Query: *app.String(cli.StringOpt{
+				Name:   "TeamspeakQuery",
+				Value:  "use 1\nlogin %s %s\nclientupdate client_nickname=Hayley\nclientlist\nquit",
+				EnvVar: "TEAMSPEAK_QUERY",
+			}),
+			Username: *app.String(cli.StringOpt{
+				Name:   "TeamspeakUser",
+				Value:  "",
+				EnvVar: "TEAMSPEAK_USER",
+			}),
+			Password: *app.String(cli.StringOpt{
+				Name:   "TeamspeakPassword",
+				Value:  "",
+				EnvVar: "TEAMSPEAK_PASSWORD",
 			}),
 		},
 	}

@@ -7,6 +7,8 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/seventy-two/Hayley/commands/teamspeak"
+
 	"github.com/bwmarrin/discordgo"
 	cli "github.com/jawher/mow.cli"
 	"github.com/seventy-two/Hayley/commands/dictionary"
@@ -31,11 +33,8 @@ func start(app *cli.Cli, services *serviceConfig) {
 	dg, _ := discordgo.New(fmt.Sprintf("Bot %s", services.discordAPI.APIKey))
 
 	go registerServices(dg, services)
-
 	dg.AddHandler(ready)
-
 	err := dg.Open()
-
 	if err != nil {
 		log.Fatalf("Error opening Discord session: %s", err)
 	}
@@ -83,6 +82,9 @@ func registerServices(dg *discordgo.Session, services *serviceConfig) {
 	}
 	if services.siegeAPI != nil {
 		siege.RegisterService(dg, services.siegeAPI)
+	}
+	if services.teamspeakAPI != nil {
+		teamspeak.RegisterService(dg, services.teamspeakAPI)
 	}
 
 }
