@@ -29,7 +29,7 @@ func ts() ([]string, error) {
 	users := tsRegexp.FindAllString(s, -1)
 	resp := []string{fmt.Sprintf("Currently in Teamspeak (%s):", serviceConfig.Address)}
 	for _, user := range users {
-		user = strings.Replace(user, "client_nickname=", "", -1)
+		user = strings.Replace(strings.Replace(user, "client_nickname=", "", -1), "\\s", " ", -1)
 		resp = append(resp, user)
 	}
 	return resp, nil
