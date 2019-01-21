@@ -74,6 +74,10 @@ func getQuarter(q string) string {
 	switch q {
 	case "1", "2", "3", "4":
 		return "Q" + q
+	case "final":
+		return "F"
+	case "final overtime":
+		return "F OT"
 	default:
 		return q
 	}
