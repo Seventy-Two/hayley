@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/seventy-two/Hayley/commands/shitpost"
 	"github.com/seventy-two/Hayley/commands/teamspeak"
 
 	"github.com/bwmarrin/discordgo"
@@ -38,6 +39,8 @@ func start(app *cli.Cli, services *serviceConfig) {
 	if err != nil {
 		log.Fatalf("Error opening Discord session: %s", err)
 	}
+	
+	dg.AddHandler(logger)
 
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -87,4 +90,10 @@ func registerServices(dg *discordgo.Session, services *serviceConfig) {
 		teamspeak.RegisterService(dg, services.teamspeakAPI)
 	}
 
+	shitpost.RegisterService(dg)
+
+}
+
+func logger(s *discordgo.Session, m *discordgo.MessageCreate) {
+	fmt.Println(m.Author.ID + " | " + m.Author.Username + " | " + m.Content)
 }
