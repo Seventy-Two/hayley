@@ -68,42 +68,44 @@ func dotamatches(params []string) ([]*match, error) {
 
 	for _, game := range data.Result.Games {
 		if (game.Spectators >= 1000) || (game.LeagueTier == 3 && game.Spectators >= 200) {
-			m := &match{}
-			m.radiant = game.RadiantTeam.TeamName
-			m.dire = game.DireTeam.TeamName
-			m.radiantScore = game.Scoreboard.Radiant.Score
-			m.direScore = game.Scoreboard.Dire.Score
-			m.radiantWins = game.RadiantSeriesWins
-			m.direWins = game.DireSeriesWins
-			m.viewers = game.Spectators
+			m := &match{
+				radiant:      game.RadiantTeam.TeamName,
+				dire:         game.DireTeam.TeamName,
+				radiantScore: game.Scoreboard.Radiant.Score,
+				direScore:    game.Scoreboard.Dire.Score,
+				radiantWins:  game.RadiantSeriesWins,
+				direWins:     game.DireSeriesWins,
+				viewers:      game.Spectators,
+				roshan:       "Killed",
+			}
+
 			if game.Scoreboard.RoshanRespawnTimer == 0 {
 				m.roshan = "Up"
-			} else {
-				m.roshan = "Killed"
 			}
-			for k := 0; k < len(listing.Infos); k++ {
-				if game.LeagueID == listing.Infos[k].LeagueID {
-					m.league = listing.Infos[k].Name
+
+			for _, info := range listing.Infos {
+				if game.LeagueID == info.LeagueID {
+					m.league = info.Name
+					break
 				}
 			}
 
 			duration := int(game.Scoreboard.Duration)
 			m.clock = fmt.Sprintf((time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC).Add(time.Duration(duration) * time.Second)).Format(timer))
 
-			for j := 0; j < len(game.Scoreboard.Radiant.Players); j++ {
-				m.radiantNet += game.Scoreboard.Radiant.Players[j].NetWorth
+			for _, player := range game.Scoreboard.Radiant.Players {
+				m.radiantNet += player.NetWorth
 			}
-
-			for j := 0; j < len(game.Scoreboard.Dire.Players); j++ {
-				m.direNet += game.Scoreboard.Dire.Players[j].NetWorth
+			for _, player := range game.Scoreboard.Dire.Players {
+				m.direNet += player.NetWorth
 			}
 
 			if heroes {
-				for k := 0; k < len(game.Scoreboard.Radiant.Picks); k++ {
-					m.radiantHeroes = append(m.radiantHeroes, strings.Join(getHerofromID(game.Scoreboard.Radiant.Picks[k].HeroID, getHeroes), " "))
+				for _, pick := range game.Scoreboard.Radiant.Picks {
+					m.radiantHeroes = append(m.radiantHeroes, strings.Join(getHerofromID(pick.HeroID, getHeroes), " "))
 				}
-				for k := 0; k < len(game.Scoreboard.Dire.Picks); k++ {
-					m.direHeroes = append(m.direHeroes, strings.Join(getHerofromID(game.Scoreboard.Dire.Picks[k].HeroID, getHeroes), " "))
+				for _, pick := range game.Scoreboard.Dire.Picks {
+					m.direHeroes = append(m.direHeroes, strings.Join(getHerofromID(pick.HeroID, getHeroes), " "))
 				}
 
 			}
@@ -129,18 +131,18 @@ func dotamatches(params []string) ([]*match, error) {
 	return matches, nil
 }
 
-func getHerofromID(id int, heroes *GetHeroes) (out []string) {
+func getHerofromID(id int, heroes *GetHeroes) []string {
 	if id == 0 {
 		return []string{"PICK"}
 	}
-	out = getShortHero(id)
-	if len(out) > 0 {
+	out := getShortHero(id)
+	if out != nil {
 		return out
 	}
-	for m := 0; m < len(heroes.Result.Heroes); m++ {
-		if heroes.Result.Heroes[m].ID == id {
-			out = []string{heroes.Result.Heroes[m].LocalizedName}
-			return out
+
+	for _, hero := range heroes.Result.Heroes {
+		if hero.ID == id {
+			return []string{hero.LocalizedName}
 		}
 	}
 	return nil

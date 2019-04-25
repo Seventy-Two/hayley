@@ -233,6 +233,6 @@ func getShortHero(id int) (out []string) {
 	case 119:
 		return []string{"Dark", "Willow"}
 	default:
-		return []string{""}
+		return nil
 	}
 }
