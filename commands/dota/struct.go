@@ -129,15 +129,17 @@ type LeagueGames struct {
 }
 
 type LeagueListing struct {
-	Result struct {
-		Leagues []struct {
-			Name          string `json:"name"`
-			Leagueid      int    `json:"leagueid"`
-			Description   string `json:"description"`
-			TournamentURL string `json:"tournament_url"`
-			Itemdef       int    `json:"itemdef"`
-		} `json:"leagues"`
-	} `json:"result"`
+	Infos []struct {
+		LeagueID           int    `json:"league_id"`
+		Name               string `json:"name"`
+		Tier               int    `json:"tier"`
+		Region             int    `json:"region"`
+		MostRecentActivity int    `json:"most_recent_activity"`
+		TotalPrizePool     int    `json:"total_prize_pool"`
+		StartTimestamp     int    `json:"start_timestamp"`
+		EndTimestamp       int    `json:"end_timestamp"`
+		Status             int    `json:"status"`
+	} `json:"infos"`
 }
 
 type GetHeroes struct {

@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/seventy-two/Hayley/commands/beer"
 	"github.com/seventy-two/Hayley/commands/shitpost"
 	"github.com/seventy-two/Hayley/commands/teamspeak"
 
@@ -39,7 +40,7 @@ func start(app *cli.Cli, services *serviceConfig) {
 	if err != nil {
 		log.Fatalf("Error opening Discord session: %s", err)
 	}
-	
+
 	dg.AddHandler(logger)
 
 	sc := make(chan os.Signal, 1)
@@ -88,6 +89,9 @@ func registerServices(dg *discordgo.Session, services *serviceConfig) {
 	}
 	if services.teamspeakAPI != nil {
 		teamspeak.RegisterService(dg, services.teamspeakAPI)
+	}
+	if services.beerAPI != nil {
+		beer.RegisterService(dg, services.beerAPI)
 	}
 
 	shitpost.RegisterService(dg)

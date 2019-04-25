@@ -36,6 +36,7 @@ type serviceConfig struct {
 	stocksAPI     *stocks.Service
 	siegeAPI      *siege.Service
 	teamspeakAPI  *teamspeak.Service
+	beerAPI       *service.Service
 }
 
 var appMeta = struct {
@@ -79,7 +80,7 @@ func main() {
 			}),
 			DotaListingURL: *app.String(cli.StringOpt{
 				Name:   "DotaListingURL",
-				Value:  "http://api.steampowered.com/IDOTA2Match_570/GetLeagueListing/v1/?key=%s",
+				Value:  "http://www.dota2.com/webapi/IDOTA2League/GetLeagueInfoList/v001",
 				EnvVar: "DOTA_LISTING_URL",
 			}),
 			DotaMatchURL: *app.String(cli.StringOpt{
@@ -275,6 +276,18 @@ func main() {
 				Name:   "TeamspeakPassword",
 				Value:  "",
 				EnvVar: "TEAMSPEAK_PASSWORD",
+			}),
+		},
+		beerAPI: &service.Service{
+			TargetURL: *app.String(cli.StringOpt{
+				Name:   "BeerAPIURL",
+				Value:  "https://api.untappd.com/v4/search/beer?q=%s&%s",
+				EnvVar: "BEER_API_URL",
+			}),
+			APIKey: *app.String(cli.StringOpt{
+				Name:   "BeerAPIKey",
+				Value:  "",
+				EnvVar: "BEER_API_KEY",
 			}),
 		},
 	}
