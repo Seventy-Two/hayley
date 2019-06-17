@@ -125,7 +125,7 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 				},
 				{
 					Name:   "Change",
-					Value:  fmt.Sprintf("%s%.2f (%s%.2f%s)", plus, q.change*100, plus, q.changePercent, "%"),
+					Value:  fmt.Sprintf("%s%.2f (%s%.2f%s)", plus, q.change, plus, q.changePercent*100, "%"),
 					Inline: true,
 				},
 				{
