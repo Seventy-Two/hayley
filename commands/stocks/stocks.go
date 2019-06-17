@@ -125,12 +125,12 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 				},
 				{
 					Name:   "Change",
-					Value:  fmt.Sprintf("%s%.2f (%s%.2f%s)", plus, q.change, plus, q.changePercent, "%"),
+					Value:  fmt.Sprintf("%s%.2f (%s%.2f%s)", plus, q.change*100, plus, q.changePercent, "%"),
 					Inline: true,
 				},
 				{
 					Name:   "Year to Date Change",
-					Value:  fmt.Sprintf("%s%.2f%s", ytdPlus, q.ytdChange, "%"),
+					Value:  fmt.Sprintf("%s%.2f%s", ytdPlus, q.ytdChange*100, "%"),
 					Inline: true,
 				},
 				{
