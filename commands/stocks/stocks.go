@@ -16,17 +16,31 @@ type Service struct {
 
 var serviceConfig *Service
 
-func getStock(matches []string) (msg string, err error) {
+type stock struct {
+	symbol        string
+	name          string
+	latestPrice   float64
+	latestSource  string
+	latestTime    string
+	change        float64
+	changePercent float64
+	week52high    float64
+	week52low     float64
+	ytdChange     float64
+	peRatio       float64
+}
+
+func getStock(matches []string) (msg *stock, err error) {
 	if len(matches) == 0 {
-		return "No search terms", nil
+		return nil, nil
 	}
 	lookup := &Lookup{}
 	err = web.GetJSON(fmt.Sprintf(serviceConfig.LookupURL, strings.Join(matches, "+")), lookup)
 	if err != nil {
-		return fmt.Sprintf("There was a problem with your request. %s", err), nil
+		return nil, err
 	}
 	if len(lookup.ResultSet.Result) == 0 {
-		return fmt.Sprintf("No results found."), nil
+		return nil, nil
 	}
 	data := &IEXStocks{}
 
@@ -42,33 +56,30 @@ func getStock(matches []string) (msg string, err error) {
 	if symbol == "" {
 		symbol = strings.Split(lookup.ResultSet.Result[0].Symbol, ".")[0]
 	}
+	url := fmt.Sprintf(serviceConfig.QuoteURL, symbol, serviceConfig.APIKey)
 
-	err = web.GetJSON(fmt.Sprintf(serviceConfig.QuoteURL, symbol), data)
+	err = web.GetJSON(url, data)
 	if err != nil {
-		return fmt.Sprintf("No data for stock symbol %s", symbol), nil
+		return nil, nil
 	}
 
 	if data.CompanyName == "" {
-		return fmt.Sprintf("No results found."), nil
+		return nil, nil
 	}
 
-	change := data.LatestPrice - data.PreviousClose
-	perChange := (change / data.PreviousClose) * 100
-
-	sign := ""
-	if change > 0 {
-		sign = "+"
-	}
-	return fmt.Sprintf("%s - %s (%s) | %.2f ( %s%.2f %s%.2f%s )", data.CompanyName,
-		data.PrimaryExchange,
-		data.LatestSource,
-		data.LatestPrice,
-		sign,
-		change,
-		sign,
-		perChange,
-		"%",
-	), nil
+	return &stock{
+		symbol:        data.Symbol,
+		name:          data.CompanyName,
+		latestPrice:   data.LatestPrice,
+		latestTime:    data.LatestTime,
+		latestSource:  data.LatestSource,
+		change:        data.Change,
+		changePercent: data.ChangePercent,
+		week52high:    data.Week52High,
+		week52low:     data.Week52Low,
+		ytdChange:     data.YtdChange,
+		peRatio:       data.PeRatio,
+	}, nil
 }
 
 func RegisterService(dg *discordgo.Session, config *Service) {
@@ -84,14 +95,61 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	switch matches[0] {
 	case "!quote":
-		str, err := getStock(matches[1:])
+		var str string
+		q, err := getStock(matches[1:])
 		if err != nil {
 			str = fmt.Sprintf("an error occured (%s)", err)
+			s.ChannelMessageSend(m.ChannelID, str)
+			return
 		}
-
-		if str != "" {
-			fmtstr := fmt.Sprintf("```%s```", str)
-			s.ChannelMessageSend(m.ChannelID, fmtstr)
+		if q == nil {
+			s.ChannelMessageSend(m.ChannelID, "no results")
+			return
 		}
+		plus := ""
+		if q.change > 0 {
+			plus = "+"
+		}
+		ytdPlus := ""
+		if q.ytdChange > 0 {
+			ytdPlus = "+"
+		}
+		s.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
+			Title:       q.symbol + " - " + q.name,
+			Description: q.latestSource + " (" + q.latestTime + ")",
+			Fields: []*discordgo.MessageEmbedField{
+				{
+					Name:   "Latest Price",
+					Value:  fmt.Sprintf("%.2f", q.latestPrice),
+					Inline: true,
+				},
+				{
+					Name:   "Change",
+					Value:  fmt.Sprintf("%s%.2f (%s%.2f%s)", plus, q.change, plus, q.changePercent, "%"),
+					Inline: true,
+				},
+				{
+					Name:   "Year to Date Change",
+					Value:  fmt.Sprintf("%s%.2f%s", ytdPlus, q.ytdChange, "%"),
+					Inline: true,
+				},
+				{
+					Name:   "52 Week High",
+					Value:  fmt.Sprintf("%.2f", q.week52high),
+					Inline: true,
+				},
+				{
+					Name:   "52 Week Low",
+					Value:  fmt.Sprintf("%.2f", q.week52low),
+					Inline: true,
+				},
+				{
+					Name:   "P/E Ratio",
+					Value:  fmt.Sprintf("%.2f", q.peRatio),
+					Inline: true,
+				},
+			},
+		},
+		)
 	}
 }

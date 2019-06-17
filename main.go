@@ -37,6 +37,7 @@ type serviceConfig struct {
 	siegeAPI      *siege.Service
 	teamspeakAPI  *teamspeak.Service
 	beerAPI       *service.Service
+	quotesAPI     *service.Service
 }
 
 var appMeta = struct {
@@ -89,9 +90,9 @@ func main() {
 				EnvVar: "DOTA_MATCH_URL",
 			}),
 			DotaHeroesURL: *app.String(cli.StringOpt{
-				Name:   "DotaMatchURL",
+				Name:   "DotaHeroesURL",
 				Value:  "http://api.steampowered.com/IEconDOTA2_570/GetHeroes/v1/?language=en_gb&key=%s",
-				EnvVar: "DOTA_MATCH_URL",
+				EnvVar: "DOTA_HEROES_URL",
 			}),
 		},
 		weatherAPI: &weather.Service{
@@ -203,8 +204,13 @@ func main() {
 		stocksAPI: &stocks.Service{
 			QuoteURL: *app.String(cli.StringOpt{
 				Name:   "StocksQuoteURL",
-				Value:  "https://api.iextrading.com/1.0/stock/%s/quote",
+				Value:  "https://cloud-sse.iexapis.com/stable/stock/%s/quote?token=%s",
 				EnvVar: "STOCKS_QUOTE_URL",
+			}),
+			APIKey: *app.String(cli.StringOpt{
+				Name:   "StocksQuoteKey",
+				Value:  "",
+				EnvVar: "STOCKS_QUOTE_KEY",
 			}),
 			LookupURL: *app.String(cli.StringOpt{
 				Name:   "StocksLookupURL",
@@ -288,6 +294,13 @@ func main() {
 				Name:   "BeerAPIKey",
 				Value:  "",
 				EnvVar: "BEER_API_KEY",
+			}),
+		},
+		quotesAPI: &service.Service{
+			TargetURL: *app.String(cli.StringOpt{
+				Name:   "QuotesAPIURL",
+				Value:  "http://quotes.rest/qod.json",
+				EnvVar: "QUOTES_API_URL",
 			}),
 		},
 	}
