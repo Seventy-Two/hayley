@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/prometheus/common/log"
 	"github.com/ryanuber/columnize"
 	"github.com/seventy-two/hayley/nc"
 )
@@ -51,12 +50,7 @@ func ts() ([]string, error) {
 		return nil, err
 	}
 	if len(users) == 0 {
-		log.Warn("no users")
 		return nil, nil
-	} else {
-		log.Warn("wtf")
-		log.Warn(users)
-		log.Warn(len(users))
 	}
 	tsString := columnize.SimpleFormat(users)
 	resp = append(resp, tsString)

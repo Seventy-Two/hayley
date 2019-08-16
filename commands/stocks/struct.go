@@ -3,8 +3,6 @@ package stocks
 type IEXStocks struct {
 	Symbol                string  `json:"symbol"`
 	CompanyName           string  `json:"companyName"`
-	PrimaryExchange       string  `json:"primaryExchange"`
-	Sector                string  `json:"sector"`
 	CalculationPrice      string  `json:"calculationPrice"`
 	Open                  float64 `json:"open"`
 	OpenTime              int64   `json:"openTime"`
@@ -35,8 +33,8 @@ type IEXStocks struct {
 	IexBidPrice           float64 `json:"iexBidPrice"`
 	IexBidSize            int     `json:"iexBidSize"`
 	IexAskPrice           float64 `json:"iexAskPrice"`
-	IexAskSize            float64 `json:"iexAskSize"`
-	MarketCap             float64 `json:"marketCap"`
+	IexAskSize            int     `json:"iexAskSize"`
+	MarketCap             int64   `json:"marketCap"`
 	PeRatio               float64 `json:"peRatio"`
 	Week52High            float64 `json:"week52High"`
 	Week52Low             float64 `json:"week52Low"`

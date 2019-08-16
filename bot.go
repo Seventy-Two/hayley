@@ -19,6 +19,7 @@ import (
 	"github.com/seventy-two/Hayley/commands/math"
 	"github.com/seventy-two/Hayley/commands/movie"
 	"github.com/seventy-two/Hayley/commands/nfl"
+	"github.com/seventy-two/Hayley/commands/quotes"
 	"github.com/seventy-two/Hayley/commands/siege"
 	"github.com/seventy-two/Hayley/commands/stocks"
 	"github.com/seventy-two/Hayley/commands/tv"
@@ -92,6 +93,9 @@ func registerServices(dg *discordgo.Session, services *serviceConfig) {
 	}
 	if services.beerAPI != nil {
 		beer.RegisterService(dg, services.beerAPI)
+	}
+	if services.quotesAPI != nil {
+		quotes.RegisterService(dg, services.quotesAPI)
 	}
 
 	shitpost.RegisterService(dg)
