@@ -19,6 +19,10 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if strings.ToLower(m.Content) == "sad" {
+		s.ChannelMessageSend(m.ChannelID, "sad")
+	}
+
 	if hasWord(m.Content, "same") {
 		s.ChannelMessageSend(m.ChannelID, "same")
 	}

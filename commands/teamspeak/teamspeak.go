@@ -8,8 +8,9 @@ import (
 	"sync"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/prometheus/common/log"
 	"github.com/ryanuber/columnize"
-	"github.com/seventy-two/Hayley/nc"
+	"github.com/seventy-two/hayley/nc"
 )
 
 var (
@@ -48,6 +49,14 @@ func ts() ([]string, error) {
 	users, err := buildTSUsers()
 	if err != nil {
 		return nil, err
+	}
+	if len(users) == 0 {
+		log.Warn("no users")
+		return nil, nil
+	} else {
+		log.Warn("wtf")
+		log.Warn(users)
+		log.Warn(len(users))
 	}
 	tsString := columnize.SimpleFormat(users)
 	resp = append(resp, tsString)
@@ -139,6 +148,10 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 		if err != nil {
 			str = fmt.Sprintf("an error occured (%s)", err)
+		} else if res == nil {
+			s.ChannelMessageSend(m.ChannelID, "Nobody in Teamspeak (0x48.io)")
+			s.ChannelMessageSend(m.ChannelID, "sad")
+			return
 		} else {
 			str = strings.Join(res, "\n")
 		}

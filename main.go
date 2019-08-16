@@ -89,9 +89,9 @@ func main() {
 				EnvVar: "DOTA_MATCH_URL",
 			}),
 			DotaHeroesURL: *app.String(cli.StringOpt{
-				Name:   "DotaMatchURL",
+				Name:   "DotaHeroesURL",
 				Value:  "http://api.steampowered.com/IEconDOTA2_570/GetHeroes/v1/?language=en_gb&key=%s",
-				EnvVar: "DOTA_MATCH_URL",
+				EnvVar: "DOTA_HEROES_URL",
 			}),
 		},
 		weatherAPI: &weather.Service{
