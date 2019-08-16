@@ -114,6 +114,7 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if q.ytdChange > 0 {
 			ytdPlus = "+"
 		}
+
 		s.ChannelMessageSendEmbed(m.ChannelID, &discordgo.MessageEmbed{
 			Title:       q.symbol + " - " + q.name,
 			Description: q.latestSource + " (" + q.latestTime + ")",
