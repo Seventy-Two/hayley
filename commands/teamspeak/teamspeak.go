@@ -5,9 +5,9 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/prometheus/common/log"
 	"github.com/ryanuber/columnize"
 	"github.com/seventy-two/hayley/nc"
 )
@@ -17,7 +17,7 @@ var (
 	typeRegexp     = regexp.MustCompile("client_type=[0-9]")
 	nickRegexp     = regexp.MustCompile("client_nickname=[^\\s]*")
 	versRegexp     = regexp.MustCompile("client_version=[^\\s]*")
-	platformRegexp = regexp.MustCompile("client_platform=[^\\s]*")
+	platformRegexp = regexp.MustCompile("client_platform=[^\\|]*")
 	inMutedRegexp  = regexp.MustCompile("client_input_muted=[0-1]")
 	outMutedRegexp = regexp.MustCompile("client_output_muted=[0-1]")
 )
@@ -44,9 +44,10 @@ var serviceConfig *Service
 
 func ts() ([]string, error) {
 
-	resp := []string{fmt.Sprintf("Currently in Teamspeak (%s):", serviceConfig.Address)}
+	resp := []string{fmt.Sprintf("Currently in Teamspeak:")}
 	users, err := buildTSUsers()
 	if err != nil {
+		log.Warn(err)
 		return nil, err
 	}
 	if len(users) == 0 {
@@ -60,23 +61,47 @@ func ts() ([]string, error) {
 func buildTSUsers() ([]string, error) {
 	s, err := nc.RetrieveString(serviceConfig.Address, serviceConfig.Port, serviceConfig.Query, serviceConfig.Username, serviceConfig.Password)
 	if err != nil {
+		log.Warn(err)
 		return nil, err
 	}
-	var tsUsers []*tsUser
-	users := clidRegexp.FindAllString(s, -1)
-	types := typeRegexp.FindAllString(s, -1)
-	var wg sync.WaitGroup
 
-	for i, user := range users {
-		u := &tsUser{
-			cli:        user,
-			clientType: strings.TrimPrefix(types[i], "client_type="),
+	var tsUsers []*tsUser
+	types := typeRegexp.FindAllString(s, -1)
+	nicks := nickRegexp.FindAllString(s, -1)
+	vers := versRegexp.FindAllString(s, -1)
+	platforms := platformRegexp.FindAllString(s, -1)
+	muteds := inMutedRegexp.FindAllString(s, -1)
+	deafs := outMutedRegexp.FindAllString(s, -1)
+	var mBool []bool
+	var dBool []bool
+
+	for _, m := range muteds {
+		muted, err := strconv.ParseBool(strings.TrimPrefix(m, "client_input_muted="))
+		if err != nil {
+			return nil, err
 		}
-		wg.Add(1)
-		tsUsers = append(tsUsers, u)
-		go populateUser(u, &wg)
+		mBool = append(mBool, muted)
 	}
-	wg.Wait()
+
+	for _, d := range deafs {
+		deaf, err := strconv.ParseBool(strings.TrimPrefix(d, "client_output_muted="))
+		if err != nil {
+			return nil, err
+		}
+		dBool = append(dBool, deaf)
+	}
+
+	for i := range types {
+		u := &tsUser{
+			clientType: strings.TrimPrefix(types[i], "client_type="),
+			nickname:   strings.TrimPrefix(nicks[i], "client_nickname="),
+			version:    strings.TrimPrefix(vers[i], "client_version="),
+			platform:   strings.TrimPrefix(platforms[i], "client_platform="),
+			inMuted:    mBool[i],
+			outMuted:   dBool[i],
+		}
+		tsUsers = append(tsUsers, u)
+	}
 
 	var userList []string
 	for _, user := range tsUsers {
@@ -96,32 +121,6 @@ func buildTSUsers() ([]string, error) {
 	}
 	return userList, nil
 
-}
-
-func populateUser(u *tsUser, wg *sync.WaitGroup) {
-	if u.clientType == "1" {
-		wg.Done()
-		return
-	}
-	resp, err := nc.RetrieveString(serviceConfig.Address, serviceConfig.Port, "use %s\nlogin %s %s\n%s\nquit", "1", serviceConfig.Username, serviceConfig.Password, fmt.Sprintf("clientinfo %s", u.cli))
-	if err != nil {
-		wg.Done()
-		return
-	}
-	u.nickname = strings.TrimPrefix(nickRegexp.FindString(resp), "client_nickname=")
-	u.version = strings.TrimPrefix(versRegexp.FindString(resp), "client_version=")
-	u.platform = strings.TrimPrefix(platformRegexp.FindString(resp), "client_platform=")
-	u.inMuted, err = strconv.ParseBool(strings.TrimPrefix(inMutedRegexp.FindString(resp), "client_input_muted="))
-	if err != nil {
-		wg.Done()
-		return
-	}
-	u.outMuted, err = strconv.ParseBool(strings.TrimPrefix(outMutedRegexp.FindString(resp), "client_output_muted="))
-	if err != nil {
-		wg.Done()
-		return
-	}
-	wg.Done()
 }
 
 func RegisterService(dg *discordgo.Session, config *Service) {

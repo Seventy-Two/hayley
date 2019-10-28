@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/seventy-two/Hayley/service"
+	"github.com/seventy-two/hayley/service"
 	"gopkg.in/xmlpath.v2"
 )
 

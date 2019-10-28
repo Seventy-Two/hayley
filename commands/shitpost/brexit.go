@@ -7,7 +7,7 @@ import (
 )
 
 func brexitCountdown() string {
-	timeBrexit, _ := time.Parse(time.RFC3339, "2019-10-31T23:00:00Z") // it literally never errors
+	timeBrexit, _ := time.Parse(time.RFC3339, "2020-01-31T00:00:00Z") // it literally never errors
 	d := time.Until(timeBrexit)
 	days := int(d.Hours()) / 24
 	hours := int(d.Hours()) % 24

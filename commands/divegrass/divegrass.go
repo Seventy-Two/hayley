@@ -11,7 +11,7 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/ryanuber/columnize"
-	"github.com/seventy-two/Hayley/service"
+	"github.com/seventy-two/hayley/service"
 )
 
 var serviceConfig *service.Service

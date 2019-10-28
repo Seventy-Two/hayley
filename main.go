@@ -3,15 +3,15 @@ package main
 import (
 	"os"
 
-	"github.com/seventy-two/Hayley/commands/dictionary"
-	"github.com/seventy-two/Hayley/commands/siege"
-	"github.com/seventy-two/Hayley/commands/stocks"
-	"github.com/seventy-two/Hayley/commands/teamspeak"
-	"github.com/seventy-two/Hayley/commands/weather"
-	"github.com/seventy-two/Hayley/commands/youtube"
-	"github.com/seventy-two/Hayley/service"
+	"github.com/seventy-two/hayley/commands/dictionary"
+	"github.com/seventy-two/hayley/commands/siege"
+	"github.com/seventy-two/hayley/commands/stocks"
+	"github.com/seventy-two/hayley/commands/teamspeak"
+	"github.com/seventy-two/hayley/commands/weather"
+	"github.com/seventy-two/hayley/commands/youtube"
+	"github.com/seventy-two/hayley/service"
 
-	"github.com/seventy-two/Hayley/commands/dota"
+	"github.com/seventy-two/hayley/commands/dota"
 
 	cli "github.com/jawher/mow.cli"
 )
@@ -270,7 +270,7 @@ func main() {
 			}),
 			Query: *app.String(cli.StringOpt{
 				Name:   "TeamspeakQuery",
-				Value:  "use 1\nlogin %s %s\nclientupdate client_nickname=Hayley\nclientlist\nquit",
+				Value:  "use 1\nlogin %s %s\nclientupdate client_nickname=Hayley\nclientlist -info -voice\nquit",
 				EnvVar: "TEAMSPEAK_QUERY",
 			}),
 			Username: *app.String(cli.StringOpt{

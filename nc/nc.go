@@ -24,12 +24,18 @@ func RetrieveString(address, port, query string, params ...string) (string, erro
 	var wg sync.WaitGroup
 	wg.Add(2)
 	go func() {
-		io.Copy(tcpconn, strings.NewReader(q))
+		_, err := io.Copy(tcpconn, strings.NewReader(q))
+		if err != nil {
+			fmt.Println(err)
+		}
 		tcpconn.CloseWrite()
 		wg.Done()
 	}()
 	go func() {
-		io.Copy(buf, tcpconn)
+		_, err := io.Copy(buf, tcpconn)
+		if err != nil {
+			fmt.Println(err)
+		}
 		tcpconn.CloseRead()
 		wg.Done()
 	}()
