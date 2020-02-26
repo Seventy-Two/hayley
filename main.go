@@ -221,7 +221,7 @@ func main() {
 		siegeAPI: &siege.Service{
 			AuthURL: *app.String(cli.StringOpt{
 				Name:   "SiegeAuthURL",
-				Value:  "https://uplayconnect.ubi.com/ubiservices/v3/profiles/sessions",
+				Value:  "https://public-ubiservices.ubi.com/v3/profiles/sessions",
 				EnvVar: "SIEGE_AUTH_URL",
 			}),
 			AuthUser: *app.String(cli.StringOpt{

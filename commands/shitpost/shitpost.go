@@ -1,10 +1,8 @@
 package shitpost
 
 import (
-	"math/rand"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -41,22 +39,6 @@ func invokeCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if hasWord(m.Content, "linux") && !strings.Contains(strings.ToLower(m.Content), "gnu") {
 		s.ChannelMessageSend(m.ChannelID, rms())
 	}
-
-	if m.Author.Username == "GGGG" && m.Author.Discriminator == "8973" {
-		adamRand--
-		rand.Seed(time.Now().Unix())
-		r := rand.Intn(adamRand)
-		if r < 4 {
-			s.ChannelMessageDelete(m.ChannelID, m.ID)
-		}
-		if adamRand == 0 {
-			adamRand = 100
-		}
-	}
-
-	// if m.Author.Username == "GGGG" && m.Author.Discriminator == "8973" && strings.Contains(m.Content, "http") {
-	// 	s.ChannelMessageDelete(m.ChannelID, m.ID)
-	// }
 }
 
 func hasWord(s, match string) bool {

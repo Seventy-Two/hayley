@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,8 +31,7 @@ func siege(user string) (string, error) {
 	if serviceConfig.AuthExpiry == nil || serviceConfig.AuthExpiry.Before(time.Now()) {
 		tok, expiry, err := authenticate(client, serviceConfig.AuthURL, serviceConfig.AuthUser, serviceConfig.AuthPassword)
 		if err != nil {
-			log.Print(err)
-			return "", nil
+			return "", err
 		}
 		serviceConfig.AuthToken = tok
 		serviceConfig.AuthExpiry = expiry
@@ -41,33 +39,30 @@ func siege(user string) (string, error) {
 
 	id, err := retrieveUserID(client, user, serviceConfig.ProfileURL, serviceConfig.AuthToken)
 	if err != nil {
-		log.Print(err)
-		return "", nil
+		return "", err
 	}
-	level, err := retrieveUserLevel(client, id, serviceConfig.LevelURL, serviceConfig.AuthToken)
+	profile, err := retrievePlayerProfile(client, id, serviceConfig.LevelURL, serviceConfig.AuthToken)
 	if err != nil {
-		log.Print(err)
-		return "", nil
+		return "", err
+	}
+	level := strconv.Itoa(profile.Level)
+
+	player, err := retrievePlayer(client, id, serviceConfig.RankURL, serviceConfig.AuthToken)
+	if err != nil {
+		return "", err
 	}
 
-	rank, mmr, season, err := retrieveUserRank(client, id, serviceConfig.RankURL, serviceConfig.AuthToken)
-	if err != nil {
-		log.Print(err)
-		return "", nil
-	}
-	if level == "0" || level == "" {
-		return "Did not find user", nil
-	}
+	rank, mmr, season := player.Rank, strconv.Itoa(int(player.Mmr)), player.Season
 
 	if rank == 0 {
-		out := fmt.Sprintf("%s - Level %s", user, level)
+		out := fmt.Sprintf("%s - Level: %s - Pack Chance: %d%s", user, level, profile.LootboxProbability/100, "%")
 		return out, nil
 	}
 
 	cleanRank := convertRank(rank)
-	cleanSeaons := convertSeason(season)
+	cleanSeason := convertSeason(season)
 
-	out := fmt.Sprintf("%s - Level %s - Rank %s - %s MMR - %s", user, level, cleanRank, mmr, cleanSeaons)
+	out := fmt.Sprintf("%s - Level %s - Rank %s - %s MMR - %s", user, level, cleanRank, mmr, cleanSeason)
 	return out, nil
 }
 
@@ -84,66 +79,47 @@ func convertSeason(season int) string {
 }
 
 func convertRank(rank int) string {
-	switch rank {
-	case 0:
-		return "Unranked"
-	case 1:
-		return "Copper IV"
-	case 2:
-		return "Copper III"
-	case 3:
-		return "Copper II"
-	case 4:
-		return "Copper I"
-	case 5:
-		return "Bronze IV"
-	case 6:
-		return "Bronze III"
-	case 7:
-		return "Bronze II"
-	case 8:
-		return "Bronze I"
-	case 9:
-		return "Silver IV"
-	case 10:
-		return "Silver III"
-	case 11:
-		return "Silver II"
-	case 12:
-		return "Silver I"
-	case 13:
-		return "Gold IV"
-	case 14:
-		return "Gold III"
-	case 15:
-		return "Gold II"
-	case 16:
-		return "Gold I"
-	case 17:
-		return "Platinum III"
-	case 18:
-		return "Platinum II"
-	case 19:
-		return "Platinum I"
-	case 20:
-		return "Diamond"
-	default:
-		return "Coward"
+	ranks := []string{
+		"Unranked",
+		"Copper IV",
+		"Copper III",
+		"Copper II",
+		"Copper I",
+		"Bronze IV",
+		"Bronze III",
+		"Bronze II",
+		"Bronze I",
+		"Silver IV",
+		"Silver III",
+		"Silver II",
+		"Silver I",
+		"Gold IV",
+		"Gold III",
+		"Gold II",
+		"Gold I",
+		"Platinum III",
+		"Platinum II",
+		"Platinum I",
+		"Diamond",
 	}
+	return ranks[rank]
 }
 
-func retrieveUserRank(client *http.Client, id, rankURL, auth string) (int, string, int, error) {
+func retrievePlayer(client *http.Client, id, rankURL, auth string) (*player, error) {
 	body, err := makeUbiRequest(client, fmt.Sprintf(rankURL, id), auth)
+	if err != nil {
+		return nil, err
+	}
 	r := &rankResponse{}
 	err = json.Unmarshal(body, r)
 	if err != nil {
-		log.Print(err)
-		return 0, "", 0, err
+		fmt.Println(err)
+		return nil, err
 	}
 	for _, player := range r.Players {
-		return player.Rank, strconv.Itoa(int(player.Mmr)), player.Season, nil
+		return &player, nil
 	}
-	return 0, "", 0, nil
+	return nil, nil
 }
 
 type rankResponse struct {
@@ -172,32 +148,41 @@ type player struct {
 	MaxRank             int       `json:"max_rank"`
 }
 
-func retrieveUserLevel(client *http.Client, id, levelURL, auth string) (string, error) {
+func retrievePlayerProfile(client *http.Client, id, levelURL, auth string) (*playerProfile, error) {
 	body, err := makeUbiRequest(client, fmt.Sprintf(levelURL, id), auth)
-	r := &levelResponse{}
+	if err != nil {
+		return nil, err
+	}
+	r := &playerProfiles{}
 	err = json.Unmarshal(body, r)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	for _, prof := range r.PlayerProfiles {
-		return strconv.Itoa(prof.Level), nil
+		return &prof, nil
 	}
 
-	return "", nil
+	return nil, fmt.Errorf("did not find player profile")
 }
 
-type levelResponse struct {
-	PlayerProfiles []struct {
-		Xp                 int    `json:"xp"`
-		ProfileID          string `json:"profile_id"`
-		LootboxProbability int    `json:"lootbox_probability"`
-		Level              int    `json:"level"`
-	} `json:"player_profiles"`
+type playerProfiles struct {
+	PlayerProfiles []playerProfile `json:"player_profiles"`
+}
+
+type playerProfile struct {
+	Xp                 int    `json:"xp"`
+	ProfileID          string `json:"profile_id"`
+	LootboxProbability int    `json:"lootbox_probability"`
+	Level              int    `json:"level"`
 }
 
 func retrieveUserID(client *http.Client, user, profURL, auth string) (string, error) {
 	body, err := makeUbiRequest(client, fmt.Sprintf(profURL, user), auth)
+	if err != nil {
+		return "", err
+	}
+	fmt.Println(string(body))
 	r := &userResponse{}
 	err = json.Unmarshal(body, r)
 	if err != nil {
@@ -206,7 +191,7 @@ func retrieveUserID(client *http.Client, user, profURL, auth string) (string, er
 	for _, prof := range r.Profiles {
 		return prof.IDOnPlatform, nil
 	}
-	return "", nil
+	return "", fmt.Errorf("did not find userID")
 }
 
 type userResponse struct {
@@ -247,7 +232,9 @@ func authenticate(client *http.Client, authURL, user, pass string) (string, *tim
 	if err != nil {
 		return "", nil, err
 	}
-
+	if r.Ticket == "" {
+		return "", nil, fmt.Errorf("could not authenticate with ubi")
+	}
 	return r.Ticket, &r.Expiration, nil
 }
 
